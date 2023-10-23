@@ -28,6 +28,8 @@ if uploaded_file is not None:
   # Can be used wherever a "file-like" object is accepted:
   tags_df = pd.read_csv(uploaded_file)
   st.dataframe(tags_df)
+else:
+  tags = []
 
 # Create a TF-IDF vectorizer
 tfidf_vectorizer = TfidfVectorizer()
