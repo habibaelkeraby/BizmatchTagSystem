@@ -1,3 +1,3 @@
 import os
 
-os.system("streamlit run main.py --server.enableCORS false")
+os.system("streamlit run streamlit_app.py --server.enableCORS false")

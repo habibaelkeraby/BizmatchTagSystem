@@ -1,6 +1,7 @@
+
 # Imports required
 import streamlit as st
-import os
+import sklearn
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -28,33 +29,32 @@ if uploaded_file is not None:
   # Can be used wherever a "file-like" object is accepted:
   tags_df = pd.read_csv(uploaded_file)
   st.dataframe(tags_df)
+  tags = tags_df.values.tolist()
 else:
   tags = []
 
-# Create a TF-IDF vectorizer
-tfidf_vectorizer = TfidfVectorizer()
+if len(tags) != 0:
+  # Create a TF-IDF vectorizer
+  tfidf_vectorizer = TfidfVectorizer()
 
-# Fit and transform the tags into TF-IDF vectors
-tags = tags_df.values.tolist()
-tfidf_matrix = tfidf_vectorizer.fit_transform(tags)
+  # Fit and transform the tags into TF-IDF vectors
 
-# Calculate cosine similarity between all tag pairs
-cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+  tfidf_matrix = tfidf_vectorizer.fit_transform(tags)
 
-# Define a threshold for considering tags similar
-threshold = 0.5
+  # Calculate cosine similarity between all tag pairs
+  cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-# Create a dictionary to store groups of similar tags
-tag_groups = {}
+  # Define a threshold for considering tags similar
+  threshold = 0.5
 
-# Iterate through the tags and find similar tags
-for i, tag in enumerate(tags):
-    similar_tags = [tags[j] for j in range(len(tags)) if cosine_sim[i][j] > threshold]
-    tag_groups[tag] = similar_tags
+  # Create a dictionary to store groups of similar tags
+  tag_groups = {}
 
-# Print the tag groups
-for tag, similar_tags in tag_groups.items():
-    st.write(tag, ":", similar_tags)
+  # Iterate through the tags and find similar tags
+  for i, tag in enumerate(tags):
+      similar_tags = [tags[j] for j in range(len(tags)) if cosine_sim[i][j] > threshold]
+      tag_groups[tag] = similar_tags
 
-# Enable webview in replit
-os.system("streamlit run streamlit_app.py --server.enableCORS false")
+  # Print the tag groups
+  for tag, similar_tags in tag_groups.items():
+      st.write(tag, ":", similar_tags)
