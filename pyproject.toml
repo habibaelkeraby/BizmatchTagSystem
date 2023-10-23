@@ -22,4 +22,3 @@ ignore = ['W291', 'W292', 'W293']
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-server.maxUploadSize = 1000
