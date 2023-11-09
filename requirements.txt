@@ -6,3 +6,5 @@ threadpoolctl>=2.0.0
 joblib>=1.1.1
 gensim==4.3.2
 smart-open==6.4.0
+spacy==3.5.0
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.5.0/en_core_web_sm-3.5.0-py3-none-any.whl
