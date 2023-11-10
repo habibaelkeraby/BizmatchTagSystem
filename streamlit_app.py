@@ -16,6 +16,16 @@ st.write("""
 Generate tag groups to match a company to a wider network.
 
 """)
+st.divider()
+#####################################################################
+#----GENSIM w/ all text----#
+st.write("## Gensim Output")
+st.write("##### (trained on large text corpus)")
+tag_groups_gensim_df = pd.read_csv("gensim_outputdata.csv", index_col=0)
+# Dropdown widget to visualize similar tags
+option = st.selectbox('Select tag to check the tags it will be matched to:',[i for i in tag_groups_gensim_df.index])
+st.write(tag_groups_gensim_df.loc[option])
+
 ######################################################################
 # Expandable section for general instructions
 with st.expander("Follow the steps below to generate tag groupings:"):
@@ -24,7 +34,7 @@ with st.expander("Follow the steps below to generate tag groupings:"):
             \n3. You can download the .csv file of tag groupings by clicking the **Download** button.
             \n4. You can visualize the potential matches for a particular tag or tags in the multi-select widget.
             """)
-
+st.divider()
 ######################################################################
 # File Uploader
 st.write("## File Uploader")
@@ -163,10 +173,10 @@ if uploaded_file is not None:
   with st.form("my_form"):
     st.write("## Multi-Select Widget")
     options = st.multiselect(
-        'Select tag(s) to check the tags they will be matched to:', tags)
+        'Select tag(s) to check the tags they will be matched to:', tags, key=42)
 
     # Columns for printing
-    col_tfidf, col_gensim= st.columns(2)
+    col_tfidf, col_gensim = st.columns(2)
 
     # Every form must have a submit button.
     submitted = st.form_submit_button("Submit")
@@ -188,109 +198,4 @@ if uploaded_file is not None:
     else:
       st.write('')
 
-#----GENSIM w/ all text----#
-# Imports required
 
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import spacy
-import string
-import gensim
-import operator
-import re
-from spacy.lang.en.stop_words import STOP_WORDS
-from gensim import corpora
-from gensim.similarities import MatrixSimilarity
-from operator import itemgetter
-import warnings
-
-warnings.filterwarnings('ignore')
-
-scrapping_df = pd.read_json('companies.json')
-
-spacy_nlp = spacy.load('en_core_web_sm')
-
-#create list of punctuations and stopwords
-punctuations = string.punctuation
-stop_words = spacy.lang.en.stop_words.STOP_WORDS
-
-#function for data cleaning and processing
-#This can be further enhanced by adding / removing reg-exps as desired.
-
-def spacy_tokenizer(sentence):
-
-    #remove distracting single quotes
-    sentence = re.sub('\'','',sentence)
-
-    #remove digits adnd words containing digits
-    sentence = re.sub('\w*\d\w*','',sentence)
-
-    #replace extra spaces with single space
-    sentence = re.sub(' +',' ',sentence)
-
-    #remove unwanted lines starting from special charcters
-    sentence = re.sub(r'\n: \'\'.*','',sentence)
-    sentence = re.sub(r'\n!.*','',sentence)
-    sentence = re.sub(r'^:\'\'.*','',sentence)
-
-    #remove non-breaking new line characters
-    sentence = re.sub(r'\n',' ',sentence)
-
-    #remove punctunations
-    sentence = re.sub(r'[^\w\s]',' ',sentence)
-
-    #creating token object
-    tokens = spacy_nlp(sentence)
-
-    #lower, strip and lemmatize
-    tokens = [word.lemma_.lower().strip() if word.lemma_ != "-PRON-" else word.lower_ for word in tokens]
-
-    #remove stopwords, and exclude words less than 2 characters
-    tokens = [word for word in tokens if word not in stop_words and word not in punctuations and len(word) > 2]
-
-    #return tokens
-    return tokens
-
-scrapping_df['text_tokenized'] = (scrapping_df['industry'] + scrapping_df['text']).map(lambda x: spacy_tokenizer(x))
-
-company_text = scrapping_df['text_tokenized']
-from gensim.models import Word2Vec
-from sklearn.metrics.pairwise import cosine_similarity
-
-tags = scrapping_df[scrapping_df.columns.values[0]].tolist()
-tag_tokens = company_text.to_list()
-
-# Create and train a Word2Vec model
-model = Word2Vec(sentences=tag_tokens, vector_size=100, window=5, min_count=1, sg=0)
-
-# Define a function to calculate the vector representation of a tag
-def get_tag_vector(tag):
-    tokens = tag.lower().split()
-    vector = np.zeros(model.vector_size)
-    for token in tokens:
-        if token in model.wv:
-            vector += model.wv[token]
-    return vector
-
-# Calculate cosine similarity between all tag pairs
-cosine_sim_gensim = cosine_similarity([get_tag_vector(tag) for tag in tags])
-
-# Define a threshold for considering tags similar
-threshold_gensim = 0.5
-
-# Create a dictionary to store groups of similar tags
-tag_groups_gensim = {}
-
-# Iterate through the tags and find similar tags
-for i, tag in enumerate(tags):
-    similar_tags_gensim = [tags[j] for j in range(len(tags)) if cosine_sim_gensim[i][j] > threshold_gensim]
-    tag_groups_gensim[tag] = similar_tags_gensim
-
-tag_groups_gensim_df = pd.DataFrame.from_dict(tag_groups_gensim, orient='index')
-# Visualize generated tag groups
-
-print("Generated Tag Groups (Gensim-Word2Vec)")
-
-# Print the tag groups
-st.write("Generated Tag Groups (Gensim-Word2Vec) ALL TEXT DATA")
-st.write(tag_groups_gensim_df)
